@@ -1,0 +1,5 @@
+Django==4.2.27
+djangorestframework==3.16.1
+PyMySQL==1.1.2
+gunicorn==23.0.0
+cryptography==46.0.4

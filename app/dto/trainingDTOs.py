@@ -4,21 +4,19 @@ from app.model.training_models import AppUser, Company, Training
 
 
 class AppUserToDTO(serializers.ModelSerializer):
-    username = serializers.CharField(source='user.username', read_only=True)
-    email = serializers.CharField(source='user.email', read_only=True)
+    username = serializers.CharField(read_only=True)
 
     class Meta:
         model = AppUser
-        fields = ['username', 'email']
+        fields = ['username']
 
 class AppUserToEntity(serializers.ModelSerializer):
     username = serializers.CharField(write_only=True)
     password = serializers.CharField(write_only=True)
-    email = serializers.EmailField(write_only=True)
 
     class Meta:
         model = AppUser
-        fields = ['username', 'password', 'email']
+        fields = ['username', 'password']
 
     def validate(self, validated_data):
         email = validated_data.get('email', None)
@@ -43,14 +41,14 @@ class AppUserToEntity(serializers.ModelSerializer):
         return instance
 
 class CompanyToDTO(serializers.ModelSerializer):
-    name = serializers.CharField(source='company.name', read_only=True)
-    phoneNumber = serializers.CharField(source='company.phoneNumber', read_only=True)
-    email = serializers.CharField(source='company.email', read_only=True)
-    address = serializers.CharField(source='company.address', read_only=True)
+    name = serializers.CharField(read_only=True)
+    phoneNumber = serializers.CharField(read_only=True)
+    email = serializers.CharField(read_only=True)
+    address = serializers.CharField(read_only=True)
 
     class Meta:
-        model = AppUser
-        fields = ['name', 'phoneNumber', 'email', 'address']
+        model = Company
+        fields = '__all__'
 
 class CompanyToEntity(serializers.ModelSerializer):
 
@@ -81,18 +79,18 @@ class TrainingToDTO(serializers.ModelSerializer):
     accepted = serializers.BooleanField(read_only=True)
 
     class Meta:
-        model = Company
-        fields = ['request_date', 'limit_acceptance_date', 'date_start', 'date_end', 'accepted']
+        model = Training
+        fields = '__all__'
 
 class TrainingToEntity(serializers.ModelSerializer):
     limit_acceptance_date = serializers.DateTimeField()
     date_start = serializers.DateField()
     date_end = serializers.DateField()
-    user_id = serializers.IntegerField(write_only=True)
-    company_id = serializers.IntegerField(write_only=True)
+    user_id = serializers.IntegerField(source="user.id", write_only=True)
+    company_id = serializers.IntegerField(source="company.id", write_only=True)
 
     class Meta:
-        model = Company
+        model = Training
         fields = ['limit_acceptance_date', 'date_start', 'date_end', 'user_id', 'company_id']
 
     def validate(self, validated_data):

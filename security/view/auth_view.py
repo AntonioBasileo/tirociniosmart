@@ -1,9 +1,11 @@
+from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 import json
-import time
 import os
-from django.conf import settings
+import time
+
 from django.contrib.auth import authenticate
-from django.contrib.auth.models import User, Group
+from django.contrib.auth.models import User, Group, Permission
 from django.http import JsonResponse
 from rest_framework import status
 from rest_framework.response import Response
@@ -17,16 +19,7 @@ from security.utility.jwt_util import encode_jwt
 class LoginView(APIView):
 
     @staticmethod
-    def post(request):
-        """
-        Body JSON:
-        {
-          "username": "...",
-          "password": "..."
-        }
-        Response:
-        { "access_token": "<jwt>", "token_type": "Bearer", "expires_in": 3600 }
-        """
+    def get(request):
         try:
             body = json.loads(request.body.decode("utf-8") or "{}")
         except json.JSONDecodeError:
@@ -61,23 +54,62 @@ class LoginView(APIView):
 
         return Response({"access_token": token, "token_type": "Bearer", "expires_in": exp - now}, status=status.HTTP_200_OK)
 
-def register_user(request, group_name: str, permissions: tuple[str, ...] = ()):
-    user = User.objects.create_user(username=request.data.get("username"), password=request.data.get("password"))
-    group, _ = Group.objects.get_or_create(name=group_name)
-    group.permissions.set(permissions)
-    user.groups.add(group)
+def _resolve_or_create_permissions(perms):
+    resolved = []
 
-    return Response({"details": "User successfully created", "user": AppUserToDTO(user)}, status.HTTP_200_OK)
+    for p in perms or ():
+        app_label, codename = p.split('.', 1)
+
+        try:
+            resolved.append(Permission.objects.get(codename=codename))
+            continue
+        except Permission.DoesNotExist:
+            pass
+
+        model_name = codename.lower()[:100]
+        perm, _ = Permission.objects.get_or_create(
+            codename=codename,
+            content_type=ContentType.objects.get_or_create(app_label=app_label, model=model_name)[0],
+            defaults={'name': codename}
+        )
+
+        resolved.append(perm)
+
+    return resolved
+
+def register_user(request, group_name: str, permissions: list[str]):
+    username = request.data.get("username")
+    password = request.data.get("password")
+
+    if not username or not password:
+        return Response({"detail": "username/password required"}, status=HTTP_400_BAD_REQUEST)
+
+    with transaction.atomic():
+        try:
+            user = User.objects.create_user(username=username, password=password)
+            group, _ = Group.objects.get_or_create(name=group_name)
+            group.permissions.set(_resolve_or_create_permissions(permissions))
+            user.groups.add(group)
+        except Exception as e:
+            return Response({"detail": f"Errore durante la registrazione: {str(e)}"}, status=HTTP_400_BAD_REQUEST)
+
+        return Response({"details": "User successfully created", "user": AppUserToDTO(user).data}, status.HTTP_200_OK)
+
 
 class RegisterTrainingUserView(APIView):
 
     @staticmethod
     def post(request):
         return register_user(request, group_name='training_user',
-                             permissions=('app.training_register_view', 'app.training_register_detail_view', 'app.company_view'))
+                             permissions=['app.training_register_view',
+                                          'app.company_view'])
+
 
 class RegisterAdminUserView(APIView):
 
     @staticmethod
     def post(request):
-        return register_user(request, group_name='admin', permissions=('app.admin_view', ...))
+        return register_user(request,
+                             group_name='admin',
+                             permissions=['app.admin_view']
+                             )

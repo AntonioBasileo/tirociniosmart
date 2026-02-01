@@ -1,19 +1,14 @@
 from django.utils.deprecation import MiddlewareMixin
-
 from app.model.training_models import AppUser
 from security.utility.jwt_util import decode_jwt, JWTError
 import os
 
 
 class JWTAuthenticationMiddleware(MiddlewareMixin):
-    """
-    Se trova Authorization: Bearer <token>, valida il JWT e imposta request.user
-    (sovrascrivendo l'AnonymousUser eventualmente già settato da AuthenticationMiddleware).
-    """
 
     @staticmethod
     def process_request(request):
-        auth = request.META.get("Authorization", "")
+        auth = request.META.get("HTTP_AUTHORIZATION", "")
 
         if not auth.startswith("Bearer "):
             return None
@@ -23,11 +18,21 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
         if not token:
             return None
 
+        if request.path.startswith('/tirocinio-smart/'):
+            setattr(request, '_dont_enforce_csrf_checks', True)
+
+        secret_file = os.getenv("JWT_SECRET_KEY_FILE")
+        if not secret_file:
+            return None
+
         try:
+            with open(secret_file, "r") as f:
+                jwt_secret = f.read().strip()
+
             payload = decode_jwt(
                 token,
-                os.environ.get("JWT_SECRET", None),
-                os.environ.get("JWT_ISSUER", None)
+                jwt_secret,
+                os.environ.get("JWT_ISSUER", None),
             )
         except JWTError:
             return None
@@ -42,4 +47,7 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
             return None
 
         request.user = user
-        return user
+        request._cached_user = user
+
+        return None
+

@@ -82,7 +82,7 @@ done
 echo "MySQL is ready. Running migrations..."
 
 # makemigrations da eseguire SOLO la prima volta
-python manage.py makemigrations --noinput
+# python manage.py makemigrations --noinput
 python manage.py migrate --noinput
 
 echo "Starting server with Gunicorn..."

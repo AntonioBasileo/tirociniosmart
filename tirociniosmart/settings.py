@@ -70,15 +70,6 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'tirociniosmart.wsgi.application'
-
-DB_PASSWORD = ""
-DB_PASSWORD_FILE = os.getenv('DB_PASSWORD_FILE')
-
-if DB_PASSWORD_FILE:
-    with open(DB_PASSWORD_FILE, 'r') as f:
-        DB_PASSWORD = f.read().strip()
-
 DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE'),
@@ -86,7 +77,7 @@ DATABASES = {
         'PORT': os.getenv('DB_PORT'),
         'USER': os.getenv('DB_USER'),
         'NAME': os.getenv('DB_NAME'),
-        'PASSWORD': DB_PASSWORD
+        'PASSWORD': os.getenv("DB_PASSWORD")
     }
 }
 

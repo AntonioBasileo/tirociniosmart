@@ -8,7 +8,6 @@ DB_PORT="${DB_PORT:-}"
 DB_NAME="${DB_NAME:-}"
 DB_USER="${DB_USER:-}"
 DB_PASSWORD="${DB_PASSWORD:-}"
-DB_PASSWORD_FILE="${DB_PASSWORD_FILE:-}"
 MAX_WAIT_SECONDS_ENTRYPOINT="${MAX_WAIT_SECONDS_ENTRYPOINT:-60}"
 
 START_TIME="$(date +%s)"
@@ -19,24 +18,13 @@ if [ -z "$DB_HOST" ] || [ -z "$DB_PORT" ] || [ -z "$DB_NAME" ] || [ -z "$DB_USER
   exit 1
 fi
 
-# Se c'è un file secret, leggilo
-if [ -z "$DB_PASSWORD" ] && [ -n "$DB_PASSWORD_FILE" ] && [ -f "$DB_PASSWORD_FILE" ]; then
-  DB_PASSWORD="$(cat "$DB_PASSWORD_FILE")"
-fi
-
-# Se la password è vuota, esci
-if [ -z "$DB_PASSWORD" ]; then
-  echo "ERROR: DB_PASSWORD (or DB_PASSWORD_FILE) is not set."
-  exit 1
-fi
-
 export DB_HOST
 export DB_PORT
 export DB_USER
 export DB_PASSWORD
 export DB_NAME
 
-echo "Waiting for MySQL (SELECT 1) at ${DB_HOST}:${DB_PORT}..."
+echo "Waiting for MySQL (SELECT 1) at ${DB_HOST}:${DB_PORT} with user ${DB_ROOT_USER}..."
 
 until python - <<'PY'
 import os
@@ -82,7 +70,7 @@ done
 echo "MySQL is ready. Running migrations..."
 
 # makemigrations da eseguire SOLO la prima volta
-# python manage.py makemigrations --noinput
+python manage.py makemigrations --noinput
 python manage.py migrate --noinput
 
 echo "Starting server with Gunicorn..."

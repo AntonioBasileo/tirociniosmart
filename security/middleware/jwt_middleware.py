@@ -21,17 +21,10 @@ class JWTAuthenticationMiddleware(MiddlewareMixin):
         if request.path.startswith('/tirocinio-smart/'):
             setattr(request, '_dont_enforce_csrf_checks', True)
 
-        secret_file = os.getenv("JWT_SECRET_KEY_FILE")
-        if not secret_file:
-            return None
-
         try:
-            with open(secret_file, "r") as f:
-                jwt_secret = f.read().strip()
-
             payload = decode_jwt(
                 token,
-                jwt_secret,
+                os.getenv("JWT_SECRET_KEY"),
                 os.environ.get("JWT_ISSUER", None),
             )
         except JWTError:

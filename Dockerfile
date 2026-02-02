@@ -14,11 +14,13 @@ COPY requirements.txt ./
 RUN addgroup --system tirociniosmart && adduser --system --ingroup tirociniosmart tirociniosmart-user
 
 COPY app ./app
+COPY security ./security
+COPY tirociniosmart ./tirociniosmart
 COPY manage.py ./manage.py
 COPY templates ./templates
-COPY tirociniosmart ./tirociniosmart
-COPY entrypoint.sh ./entrypoint.sh
+COPY scripts/entrypoint.sh ./entrypoint.sh
 COPY requirements.txt ./requirements.txt
+COPY scripts ./scripts
 
 # Dipendenze Python (prima del codice per sfruttare cache Docker)
 RUN pip install --no-cache-dir --upgrade pip \
@@ -26,9 +28,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 # Permessi
 RUN chown -R tirociniosmart-user:tirociniosmart . && \
-    chmod +x entrypoint.sh
+    chmod +x scripts/entrypoint.sh
 
 USER tirociniosmart-user
 
 # Avvio server
-ENTRYPOINT ["./entrypoint.sh"]
+ENTRYPOINT ["./scripts/entrypoint.sh"]

@@ -50,7 +50,7 @@ class LoginView(APIView):
         with open(os.getenv("JWT_SECRET_KEY_FILE"), "r") as f:
             jwt_secret = f.read().strip()
 
-        token = encode_jwt(payload, secret=jwt_secret)
+        token = encode_jwt(payload, secret=os.getenv("JWT_SECRET_KEY"))
 
         return Response({"access_token": token, "token_type": "Bearer", "expires_in": exp - now}, status=status.HTTP_200_OK)
 

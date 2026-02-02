@@ -24,6 +24,7 @@ TirocinioSmart è una piattaforma web per la gestione digitale dei tirocini univ
 1. **Configurazione ambiente**
    - Installa Docker Desktop.
    - Scaricare il progetto kube-config disponibile nella repo kube-config.
+   - Abilitare kubernetes su docker desktop.
    - Importare i file che si trovano nelle cartelle tirocinio-smart (deployment, ingress, secrets) in Kubernetes.
 2. **Build e avvio**
    ```bash
